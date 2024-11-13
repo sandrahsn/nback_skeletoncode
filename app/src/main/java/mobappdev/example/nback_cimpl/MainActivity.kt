@@ -1,6 +1,7 @@
 package mobappdev.example.nback_cimpl
 
 import android.os.Bundle
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,9 +9,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHost
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.findNavController
+import kotlinx.coroutines.flow.collectLatest
+import mobappdev.example.nback_cimpl.ui.screens.GameScreen
 import mobappdev.example.nback_cimpl.ui.screens.HomeScreen
+import mobappdev.example.nback_cimpl.ui.screens.HomeScreenPreview
 import mobappdev.example.nback_cimpl.ui.theme.NBack_CImplTheme
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameVM
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.NavHost
+
 
 /**
  * This is the MainActivity of the application
@@ -29,6 +40,7 @@ import mobappdev.example.nback_cimpl.ui.viewmodels.GameVM
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContent {
             NBack_CImplTheme {
                 // A surface container using the 'background' color from the theme
@@ -41,8 +53,27 @@ class MainActivity : ComponentActivity() {
                         factory = GameVM.Factory
                     )
 
-                    // Instantiate the homescreen
-                    HomeScreen(vm = gameViewModel)
+                    // Create a NavController for navigation
+                    val navController = rememberNavController()
+
+                    // Set up NavHost for navigation
+                    NavHost(
+                        navController = navController,
+                        startDestination = "HomeScreen"
+                    ) {
+                        composable(route = "HomeScreen") {
+                            HomeScreen(
+                                vm = gameViewModel,
+                                navController = navController
+                            )
+                        }
+                        composable(route = "GameScreen") {
+                            GameScreen(vm = gameViewModel)
+                            // navController.popBackStack()
+                            // Attempts to pop the controller's back stack.
+                        }
+                    }
+                    //HomeScreen(vm = gameViewModel)
                 }
             }
         }

@@ -1,0 +1,4 @@
+C:/Users/sandr/AndroidStudioProjects/nback_skeletoncode/app/.cxx/Debug/70355z50/armeabi-v7a/CMakeFiles/nback_cimpl.dir
+C:/Users/sandr/AndroidStudioProjects/nback_skeletoncode/app/.cxx/Debug/70355z50/armeabi-v7a/CMakeFiles/JniBridge.dir
+C:/Users/sandr/AndroidStudioProjects/nback_skeletoncode/app/.cxx/Debug/70355z50/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/sandr/AndroidStudioProjects/nback_skeletoncode/app/.cxx/Debug/70355z50/armeabi-v7a/CMakeFiles/rebuild_cache.dir
