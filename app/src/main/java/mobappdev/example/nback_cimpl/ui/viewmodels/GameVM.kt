@@ -46,30 +46,18 @@ interface GameViewModel {
 
     fun setGameType(gameType: GameType)
     fun startGame()
-    fun checkMatch(position: Int)
+    fun checkMatch(): Boolean
 }
 
 class GameVM(
     private val userPreferencesRepository: UserPreferencesRepository
 ): GameViewModel, ViewModel() {
 
-    // val carColor = MutabelStateFlow("Red")
-    //  remote control to change the car color to red
-
-    // val currentCarColor: StateFlow<String> = carColor
-    // Everyone sees this sign (StateFlow), which is read-only
-
-    //carColor.value = "Blue"
-    // Changing the color with the remote control
-
-    // get() = carColor.asStateFlow()
-    // encapsulation - keeping things safe
-    // converting remote controle (MutableStateFlow) into a read-only sign (StateFlow).
-    // Others can see it but not change it
-
-    private val _gameState = MutableStateFlow(GameState())
-    override val gameState: StateFlow<GameState>
+    private val _gameState = MutableStateFlow(GameState()) // remote control to change GameState
+    override val gameState: StateFlow<GameState> // sign everyone sees, read-only
         get() = _gameState.asStateFlow()
+    //encapsulation - keeps things safe. converting MutableStateFlow into read-only (StateFlow)
+
 
     private val _score = MutableStateFlow(0)
     override val score: StateFlow<Int>
@@ -87,8 +75,6 @@ class GameVM(
 
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
     private var events = emptyArray<Int>()  // Array with all events
-
-    private var indexInEvents = 0
 
     // Navigation state using StateFlow, handles state in a reactive way
     private val _navigateToDetail = MutableStateFlow(false)
@@ -125,51 +111,60 @@ class GameVM(
             if (score.value > highscore.value ) {
                 _highscore.value = score.value
             }
-            _score.value = 0
         }
     }
 
     private fun runAudioGame() {
+        _score.value = 0
         // Todo: Make work for Basic grade
     }
 
     private suspend fun runVisualGame(events: Array<Int>){
+        _score.value = 0
+        var n = 0
 
         for (value in events) {
 
-            // copy: create a new instance of GameState(Gametype, eventValue) with updated eventValue
-            _gameState.value = _gameState.value.copy(eventValue = value)
-            // update _gameState to a new instance of _gameState that is exactly similar except with the eventvalue value
+            // copy: create a new instance of GameState but with updated eventValue & indexValue
+            _gameState.value = _gameState.value.copy(
+                eventValue = value,
+                indexValue = n)
 
-            indexInEvents += 1
-
-            // count scores
+            n += 1
 
             delay(eventInterval)
         }
 
     }
-    override fun checkMatch(clickedPosition: Int) {
-        // check for match between clicked position (value) and value nBack times ago
+    override fun checkMatch(): Boolean {
+        // check for matching value between index now and index nBack times ago
+        val indexNow = _gameState.value.indexValue
+        val valueNow = _gameState.value.eventValue
 
-        if (indexInEvents >= nBack) {
-            if (clickedPosition  == events[indexInEvents - nBack]) {
-                // increase score +1
+        if (indexNow >= nBack) {
+            if (valueNow  == events[indexNow-nBack]) {
+                // correct --> score +1
+
                 _score.value = score.value + 1
+                return true
             }
             else {
-                // decrease score -1
+                // can't have negative score
                 if (_score.value > 0) {
+                    // incorrect --> score -1
                     _score.value = score.value - 1
                 }
+                return false
             }
         }
+        return false
 
         /**
          * Todo: This function should check if there is a match when the user presses a match button
          * Make sure the user can only register a match once for each event.
          */
     }
+
 
     private fun runAudioVisualGame(){
         // Todo: Make work for Higher grade
@@ -207,7 +202,8 @@ enum class GameType{
 data class GameState(
     // You can use this state to push values from the VM to your UI.
     val gameType: GameType = GameType.Visual,  // Type of the game
-    val eventValue: Int = -1  // The value of the array string
+    val eventValue: Int = -1,  // The value of the array string
+    val indexValue: Int = 0
 )
 
 enum class Screen {
@@ -230,6 +226,6 @@ class FakeVM: GameViewModel{
     override fun startGame() {
     }
 
-    override fun checkMatch(clickedPosition: Int) {
-    }
+    override fun checkMatch(): Boolean {
+    return false}
 }
