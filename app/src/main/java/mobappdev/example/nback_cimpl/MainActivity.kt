@@ -23,6 +23,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
 
 
+
 /**
  * This is the MainActivity of the application
  *
@@ -35,7 +36,6 @@ import androidx.navigation.compose.NavHost
  * Author: Yeetivity
  *
  */
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
 
                     // Create a NavController for navigation
                     val navController = rememberNavController()
+                    var gridSize = gameViewModel.gridSize
 
                     // Set up NavHost for navigation
                     NavHost(
@@ -68,9 +69,9 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(route = "GameScreen") {
-                            GameScreen(vm = gameViewModel)
-                            // navController.popBackStack()
-                            // Attempts to pop the controller's back stack.
+                            GameScreen(vm = gameViewModel, navController = navController)
+                            // { navController.popBackStack() }
+                            }
                         }
                     }
                     //HomeScreen(vm = gameViewModel)
@@ -78,4 +79,3 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}

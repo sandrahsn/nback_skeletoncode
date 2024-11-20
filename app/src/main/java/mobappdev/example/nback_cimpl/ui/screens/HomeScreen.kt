@@ -58,15 +58,15 @@ fun HomeScreen(
     vm: GameViewModel,
     navController: NavController
 ) {
-    val highscore by vm.highscore.collectAsState()  // Highscore is its own StateFlow
+    val highscore by vm.highscore.collectAsState()
     val gameState by vm.gameState.collectAsState()
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
 
-
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackBarHostState) }
     ) {
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -83,6 +83,8 @@ fun HomeScreen(
             Box(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center
+                // ask for grid size and send to GameVM
+                // ask for number of events and send to GameVM
             ) {
                 Column(
                     Modifier.fillMaxWidth(),
@@ -102,7 +104,7 @@ fun HomeScreen(
             }
             Text(
                 modifier = Modifier.padding(16.dp),
-                text = "Start Game".uppercase(),
+                text = "Start Game by choosing game type", //.uppercase(),
                 style = MaterialTheme.typography.displaySmall
             )
             Row(
@@ -112,15 +114,31 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceAround,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+
+                // VISUAL BUTTON
+                Button(
+                    onClick = {
+                        navController.navigate(route = "GameScreen")
+                        scope.launch {
+                            vm.setGameType(gameType = GameType.Visual)
+                            vm.startGame()
+                        }
+                    }) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.visual),
+                        contentDescription = "Visual",
+                        modifier = Modifier
+                            .height(48.dp)
+                            .aspectRatio(3f / 2f)
+                    )
+                }
+
+                // AUDIO BUTTON
                 Button(onClick = {
+                    navController.navigate(route = "GameScreen")
                     scope.launch {
                         vm.setGameType(gameType = GameType.Audio)
                         vm.startGame()
-
-                        snackBarHostState.showSnackbar(
-                            message = "Hey! you clicked the audio button",
-                            actionLabel = "undo"
-                        )
                     }
                 })
                 {
@@ -132,27 +150,7 @@ fun HomeScreen(
                             .aspectRatio(3f / 2f)
                     )
                 }
-                Button(
-                    onClick = {
-                        navController.navigate(route = "GameScreen")
-                        scope.launch {
-                            vm.setGameType(gameType = GameType.Visual)
-                            vm.startGame()
 
-                            snackBarHostState.showSnackbar(
-                                message = "Hey! you clicked the visual button",
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.visual),
-                        contentDescription = "Visual",
-                        modifier = Modifier
-                            .height(48.dp)
-                            .aspectRatio(3f / 2f)
-                    )
-                }
             }
         }
     }

@@ -13,12 +13,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,7 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.Navigation.findNavController
+import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
 import mobappdev.example.nback_cimpl.R
@@ -44,30 +42,39 @@ import mobappdev.example.nback_cimpl.ui.viewmodels.GameState
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
 
+
 @Composable
 fun GameScreen(
-    vm: GameViewModel
+    vm: GameViewModel,
+    navController: NavController
+
 ) {
     val snackBarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
-
     val nBack = vm.nBack
     val score = vm.score.collectAsState()
     val gameState by vm.gameState.collectAsState()
+    val showPopup by vm.showEndGamePopup.collectAsState()
+    val endGameMessage by vm.endGameMessage.collectAsState()
+    val gridSize  = vm.gridSize
+
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White),
+            .background(Color.White)
+            .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         Column(
-            modifier = Modifier,
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .padding(horizontal = 8.dp,
+                    vertical = 32.dp)
         ) {
             Text(
-                text = "N-back",
+                text = "n-back",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.Black,
@@ -75,23 +82,28 @@ fun GameScreen(
                     .padding(16.dp)
             )
             Text(
-                text = "N = $nBack",
+                text = "n = $nBack",
                 fontSize = 24.sp
             )
             Text(
-                text = "Score = ${score.value}"
+                text = "Score = ${score.value}",
+                fontSize = 24.sp
             )
         }
-        Grid(gameState, Modifier)
+
+        Grid(gameState, gridSize, Modifier)
+
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .padding(horizontal = 8.dp,
+                    vertical = 8.dp)
         ) {
-
-            // Visual Button
+            // VISUAL BUTTON
             Button(
                 onClick = { scope.launch {
-                    if ( vm.checkMatch()) {
+                    if (vm.checkMatch()) {
                         snackBarHostState.showSnackbar(
                             message = "Good Job!",
                             duration = SnackbarDuration.Short
@@ -103,14 +115,10 @@ fun GameScreen(
                         )
                     }
                 }
-                          },
-               //colors = ButtonDefaults.buttonColors(
-                 //   containerColor = if (vm.checkMatch()) Color.Green else Color.Red
-                //),
+            },
                 shape = RoundedCornerShape(20.dp),
                 enabled = gameState.gameType == GameType.Visual ||
                         gameState.gameType == GameType.AudioVisual,
-
                 modifier = Modifier
                     .padding(32.dp)
             ) {
@@ -123,13 +131,24 @@ fun GameScreen(
                 )
             }
 
-            // Audio Button
+            // AUDIO BUTTON
             Button(
-                onClick = { /* vm.checkMatch() */ },
+                onClick = {
+                    scope.launch {
+                        if (vm.checkMatch()) {
+                            snackBarHostState.showSnackbar(
+                                message = "Good Job!",
+                                duration = SnackbarDuration.Short
+                            )
+                        } else {
+                            snackBarHostState.showSnackbar(
+                                message = "Incorrect",
+                                duration = SnackbarDuration.Short
+                            )
+                        }
+                    }
+                },
                 shape = RoundedCornerShape(20.dp),
-               // colors = ButtonDefaults.buttonColors(
-                 //   containerColor = if (vm.checkMatch()) Color.Green else Color.Red
-                //),
                 enabled = gameState.gameType == GameType.Audio ||
                         gameState.gameType == GameType.AudioVisual,
                 modifier = Modifier
@@ -145,50 +164,81 @@ fun GameScreen(
             }
         }
 
+        if (showPopup) {
+            AlertDialog(
+                onDismissRequest = { vm.startGame() },
+                title = { Text(text ="Time's up!") },
+                text = { Text(text = endGameMessage) },
+                confirmButton = {
+                    Button( onClick = {
+                        vm.endGame()
+                        vm.hidePopup()
+                        vm.startGame() }
+                    ){ Text(text = "Play again") }
+                                },
+                dismissButton = {
+                    Button( onClick = {
+                        vm.endGame()
+                        vm.hidePopup()
+                        // clear gamestate
+                        navController.navigate(route = "HomeScreen")
+                    }) { Text(text = "Change gametype") }
+                }
+            )
+        }
     }
 }
 
 @Composable
 fun Grid(
     gameState: GameState,
+    gridSize: Int,
     modifier: Modifier
 ) {
     Column(
         modifier = modifier
-            .fillMaxHeight(0.7F),
-        verticalArrangement = Arrangement.SpaceEvenly
+            .fillMaxHeight(0.65F),
     ) {
-        var n = 0
-        for (r in 1 until 4) {
+        var boxNumber = 1
+        for (r in 0 until gridSize) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    .padding(
+                        horizontal = 24.dp,
+                        vertical = 8.dp
+                    ),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                for (c in 1 until 4) {
-                    val position = n
+                for (c in 0 until gridSize) {
                     Box(
                         modifier = Modifier
-                            .size(80.dp)
+                            .size(100.dp)
                             .background(
-                                color = if (position == gameState.eventValue - 1) {
-                                    Color.DarkGray
+                                color =
+                                if (gameState.gameType == GameType.Visual ||
+                                    gameState.gameType == GameType.AudioVisual) {
+                                    if (boxNumber == gameState.eventValue) {
+                                        Color.DarkGray
+                                    } else {
+                                        Color.LightGray
+                                    }
                                 } else {
                                     Color.LightGray
                                 }
                             )
                    ) {
-                        Text(
-                            text = "$position")
+                        Text(text = "$boxNumber")
+                        boxNumber += 1
                     }
-                    n += 1
-                }
 
+                }
             }
         }
     }
 }
+
 
 
 @Preview
@@ -196,6 +246,6 @@ fun Grid(
 fun GamecreenPreview() {
     // Since I am injecting a VM into my homescreen that depends on Application context, the preview doesn't work.
     Surface(){
-        GameScreen(FakeVM())
+        GameScreen(FakeVM(), navController = rememberNavController())
     }
 }
