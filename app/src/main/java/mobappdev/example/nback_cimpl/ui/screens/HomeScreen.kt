@@ -79,27 +79,32 @@ fun HomeScreen(
                 text = "High-Score = $highscore",
                 style = MaterialTheme.typography.headlineLarge
             )
-            // Todo: You'll probably want to change this "BOX" part of the composable
             Box(
                 modifier = Modifier.weight(1f),
                 contentAlignment = Alignment.Center
+            ) {
                 // ask for grid size and send to GameVM
                 // ask for number of events and send to GameVM
-            ) {
                 Column(
                     Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    if (gameState.eventValue != -1) {
-                        Text(
-                            modifier = Modifier.fillMaxWidth(),
-                            text = "Current eventValue is: ${gameState.eventValue}",
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                    Button(onClick = vm::startGame) {
-                        Text(text = "Generate eventValues")
-                    }
+                    Text(text = "n = ${vm.nBack}")
+                    Text(text = "Game type: ${gameState.gameType}")
+                    Text(text = "Time between events: ${vm.eventInterval/1000} s" )
+                    Text(text = "Round length: ${vm.lengthOfGame}")
+
+
+//                    if (gameState.eventValue != -1) {
+//                        Text(
+//                            modifier = Modifier.fillMaxWidth(),
+//                            text = "Current eventValue is: ${gameState.eventValue}",
+//                            textAlign = TextAlign.Center
+//                        )
+//                    }
+//                    Button(onClick = vm::startGame) {
+//                        Text(text = "Generate eventValues")
+//                    }
                 }
             }
             Text(

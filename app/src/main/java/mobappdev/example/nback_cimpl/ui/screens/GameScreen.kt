@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
@@ -28,6 +30,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.colorspace.ColorSpace
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,7 +44,6 @@ import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameState
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
-
 
 @Composable
 fun GameScreen(
@@ -57,6 +59,7 @@ fun GameScreen(
     val showPopup by vm.showEndGamePopup.collectAsState()
     val endGameMessage by vm.endGameMessage.collectAsState()
     val gridSize  = vm.gridSize
+
 
     Column(
         modifier = Modifier
@@ -102,20 +105,7 @@ fun GameScreen(
         ) {
             // VISUAL BUTTON
             Button(
-                onClick = { scope.launch {
-                    if (vm.checkMatch()) {
-                        snackBarHostState.showSnackbar(
-                            message = "Good Job!",
-                            duration = SnackbarDuration.Short
-                        )
-                    } else {
-                        snackBarHostState.showSnackbar(
-                            message = "Incorrect",
-                            duration = SnackbarDuration.Short
-                        )
-                    }
-                }
-            },
+                onClick = { vm.checkMatch() },
                 shape = RoundedCornerShape(20.dp),
                 enabled = gameState.gameType == GameType.Visual ||
                         gameState.gameType == GameType.AudioVisual,
@@ -133,21 +123,7 @@ fun GameScreen(
 
             // AUDIO BUTTON
             Button(
-                onClick = {
-                    scope.launch {
-                        if (vm.checkMatch()) {
-                            snackBarHostState.showSnackbar(
-                                message = "Good Job!",
-                                duration = SnackbarDuration.Short
-                            )
-                        } else {
-                            snackBarHostState.showSnackbar(
-                                message = "Incorrect",
-                                duration = SnackbarDuration.Short
-                            )
-                        }
-                    }
-                },
+                onClick = { vm.checkMatch() },
                 shape = RoundedCornerShape(20.dp),
                 enabled = gameState.gameType == GameType.Audio ||
                         gameState.gameType == GameType.AudioVisual,
@@ -188,6 +164,11 @@ fun GameScreen(
         }
     }
 }
+
+fun reactionIncorrect() {
+
+}
+
 
 @Composable
 fun Grid(

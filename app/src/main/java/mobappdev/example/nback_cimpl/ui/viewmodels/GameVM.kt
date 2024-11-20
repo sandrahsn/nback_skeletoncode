@@ -45,6 +45,7 @@ interface GameViewModel {
     val showEndGamePopup: StateFlow<Boolean>
     val gridSize: Int
     val lengthOfGame: Int
+    val eventInterval: Long
 
     fun setGameType(gameType: GameType)
     fun startGame()
@@ -88,10 +89,8 @@ class GameVM(
     override val nBack: Int = 2
     override val gridSize: Int = 3
     override val lengthOfGame: Int = 10
-
+    override val eventInterval: Long = 1000L  // 2000 ms (2s)
     private var job: Job? = null  // coroutine job for the game event
-    private val eventInterval: Long = 1000L  // 2000 ms (2s)
-
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
     private var events = emptyArray<Int>()  // Array with all events
 
@@ -221,10 +220,11 @@ class GameVM(
     override fun checkMatch(): Boolean {
         val indexNow = _gameState.value.indexValue
         val valueNow = _gameState.value.eventValue
-        val indexNbackAgo = indexNow-nBack
-        val valueNbackAgo = events[indexNbackAgo]
 
         if (indexNow >= nBack) {
+            val indexNbackAgo = indexNow-nBack
+            val valueNbackAgo = events[indexNbackAgo]
+
             if (valueNow  == valueNbackAgo) {
                 _score.value = score.value + 1
                 return true
@@ -309,6 +309,8 @@ class FakeVM: GameViewModel{
         get() = 3
     override val lengthOfGame: Int
         get() = 10
+    override val eventInterval: Long
+        get() = 1000L
 
     override fun setGameType(gameType: GameType) {
     }
