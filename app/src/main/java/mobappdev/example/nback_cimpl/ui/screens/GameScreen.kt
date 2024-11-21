@@ -15,22 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.colorspace.ColorSpace
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,8 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import mobappdev.example.nback_cimpl.R
+import mobappdev.example.nback_cimpl.ui.theme.Purple40
 import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameState
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
@@ -51,15 +50,14 @@ fun GameScreen(
     navController: NavController
 
 ) {
-    val snackBarHostState = remember { SnackbarHostState() }
-    val scope = rememberCoroutineScope()
+    //val snackBarHostState = remember { SnackbarHostState() }
+    //val scope = rememberCoroutineScope()
     val nBack = vm.nBack
     val score = vm.score.collectAsState()
     val gameState by vm.gameState.collectAsState()
     val showPopup by vm.showEndGamePopup.collectAsState()
     val endGameMessage by vm.endGameMessage.collectAsState()
     val gridSize  = vm.gridSize
-
 
     Column(
         modifier = Modifier
@@ -69,6 +67,7 @@ fun GameScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
+
         Column(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -95,50 +94,7 @@ fun GameScreen(
         }
 
         Grid(gameState, gridSize, Modifier)
-
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .padding(horizontal = 8.dp,
-                    vertical = 8.dp)
-        ) {
-            // VISUAL BUTTON
-            Button(
-                onClick = { vm.checkMatch() },
-                shape = RoundedCornerShape(20.dp),
-                enabled = gameState.gameType == GameType.Visual ||
-                        gameState.gameType == GameType.AudioVisual,
-                modifier = Modifier
-                    .padding(32.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.visual),
-                    contentDescription = "Visual",
-                    modifier = Modifier
-                        .height(48.dp)
-                        .aspectRatio(3f / 2f)
-                )
-            }
-
-            // AUDIO BUTTON
-            Button(
-                onClick = { vm.checkMatch() },
-                shape = RoundedCornerShape(20.dp),
-                enabled = gameState.gameType == GameType.Audio ||
-                        gameState.gameType == GameType.AudioVisual,
-                modifier = Modifier
-                    .padding(32.dp)
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.sound_on),
-                    contentDescription = "Sound",
-                    modifier = Modifier
-                        .height(48.dp)
-                        .aspectRatio(3f / 2f)
-                )
-            }
-        }
+        Buttons(vm)
 
         if (showPopup) {
             AlertDialog(
@@ -165,9 +121,83 @@ fun GameScreen(
     }
 }
 
-fun reactionIncorrect() {
+@Composable
+fun Buttons(
+    vm: GameViewModel
+) {
+    val gameState by vm.gameState.collectAsState()
 
-}
+    // mutableStateOf() creates the state variable isMatch
+    var buttonColor by remember { mutableStateOf(Purple40) }
+    var triggerButtonColorFlash by remember { mutableStateOf(false) }
+    var isMatch by remember { mutableStateOf(false) }
+
+    Row(
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(
+                horizontal = 8.dp,
+                vertical = 8.dp
+            )
+    ) {
+        // VISUAL BUTTON
+        Button(
+            onClick = { triggerButtonColorFlash = true
+                      isMatch = vm.checkMatch()},
+            shape = RoundedCornerShape(20.dp),
+            enabled = gameState.gameType == GameType.Visual
+                    || gameState.gameType == GameType.AudioVisual,
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            modifier = Modifier
+                .padding(32.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.visual),
+                contentDescription = "Visual",
+                modifier = Modifier
+                    .height(48.dp)
+                    .aspectRatio(3f / 2f)
+            )
+        }
+
+        // AUDIO BUTTON
+        Button(
+            onClick = { triggerButtonColorFlash = true
+                      isMatch = vm.checkMatch()},
+            shape = RoundedCornerShape(20.dp),
+            enabled = gameState.gameType == GameType.Audio ||
+                    gameState.gameType == GameType.AudioVisual,
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            modifier = Modifier
+                .padding(32.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.sound_on),
+                contentDescription = "Sound",
+                modifier = Modifier
+                    .height(48.dp)
+                    .aspectRatio(3f / 2f)
+            )
+        }
+
+        // UI-specific logic
+        LaunchedEffect(key1 = triggerButtonColorFlash) {
+            while (vm.isGameBusy()) {
+                delay(100L)
+            }
+            buttonColor = if (isMatch) {
+                Color.Green
+            } else {
+                Color.Red
+            }
+            delay(200L)
+            buttonColor = Purple40
+            triggerButtonColorFlash = false
+            }
+        }
+    }
+
 
 
 @Composable

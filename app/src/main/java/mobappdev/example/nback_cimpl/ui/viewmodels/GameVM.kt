@@ -46,12 +46,14 @@ interface GameViewModel {
     val gridSize: Int
     val lengthOfGame: Int
     val eventInterval: Long
+    val busy: StateFlow<Boolean>
 
     fun setGameType(gameType: GameType)
     fun startGame()
     fun checkMatch(): Boolean
     fun endGame()
     fun hidePopup()
+    fun isGameBusy(): Boolean
 }
 
 class GameVM(
@@ -85,11 +87,18 @@ class GameVM(
     override val endGameMessage: StateFlow<String>
         get() = _endGameMessage
 
+    private val _busy = MutableStateFlow(false)
+    override val busy: StateFlow<Boolean>
+        get() = _busy
+
+    private val checkedIndices = mutableSetOf<Int>() // Keep track of indices already checked
+
+
     // variables
     override val nBack: Int = 2
     override val gridSize: Int = 3
     override val lengthOfGame: Int = 10
-    override val eventInterval: Long = 1000L  // 2000 ms (2s)
+    override val eventInterval: Long = 1500L  // 2000 ms (2s)
     private var job: Job? = null  // coroutine job for the game event
     private val nBackHelper = NBackHelper()  // Helper that generate the event array
     private var events = emptyArray<Int>()  // Array with all events
@@ -134,8 +143,11 @@ class GameVM(
         // Todo Higher Grade: currently the size etc. are hardcoded, make these based on user input
         Log.d("GameVM", "The following sequence was generated: ${events.contentToString()}")
 
-        // start a new coroutine within the lifecycle of ViewModel
-        // run game logic here
+        // start a new coroutine vmscope within the lifecycle of ViewModel
+        // run game logic here, tasks that vm is responsible for, such as:
+        // starting the game, processing game logic, or saving scores.
+        // Anything you want to persist across configuration changes (e.g., device rotation).
+
         job = viewModelScope.launch {
             when (gameState.value.gameType) {
                 GameType.Audio -> runAudioGame(events)
@@ -174,6 +186,7 @@ class GameVM(
         _score.value = 0
         initializeTextToSpeech()
             for (value in events) {
+                _busy.value = true
                 _gameState.value = _gameState.value.copy(
                     eventValue = value,
                     indexValue = n)
@@ -181,7 +194,8 @@ class GameVM(
                 speakText(letter)
                 Log.d("GameVM", "sent $letter")
                 n += 1
-                delay(eventInterval*2)
+                _busy.value = false
+                delay(eventInterval)
             }
         endGame()
     }
@@ -190,17 +204,26 @@ class GameVM(
         // inherits parent coroutine context from startGame()
     _score.value = 0
         for (value in events) {
+            _busy.value = true
             _gameState.value = _gameState.value.copy(
                 eventValue = value,
                 indexValue = n
             )
-            val number = events[value]
-            Log.d("GameVM", "sent $number")
             n += 1
+            _busy.value = false
             delay(eventInterval)
         }
         endGame()
-}
+    }
+
+    override fun isGameBusy(): Boolean {
+        if (_busy.value) {
+            return true
+        }
+        else {
+            return false
+        }
+    }
 
     override fun endGame() {
         job?.cancel()
@@ -222,26 +245,27 @@ class GameVM(
         val valueNow = _gameState.value.eventValue
 
         if (indexNow >= nBack) {
-            val indexNbackAgo = indexNow-nBack
-            val valueNbackAgo = events[indexNbackAgo]
 
-            if (valueNow  == valueNbackAgo) {
-                _score.value = score.value + 1
-                return true
+            if (checkedIndices.contains(indexNow)) {
+                return false // Already checked, so no match registered again
             }
             else {
-                // can't have negative score
-                if (_score.value > 0) {
-                    _score.value = score.value - 1
+                val indexNbackAgo = indexNow - nBack
+                val valueNbackAgo = events[indexNbackAgo]
+
+                if (valueNow == valueNbackAgo) {
+                    _score.value = score.value + 1
+                    return true
+                } else {
+                    // can't have negative score
+                    if (_score.value > 0) {
+                        _score.value = score.value - 1
+                    }
+                    return false
                 }
-                return false
             }
         }
         return false
-
-        /**
-         * Make sure the user can only register a match once for each event.
-         */
     }
 
     private fun runAudioVisualGame(){
@@ -311,6 +335,13 @@ class FakeVM: GameViewModel{
         get() = 10
     override val eventInterval: Long
         get() = 1000L
+    override var busy: StateFlow<Boolean>
+        get() = TODO("Not yet implemented")
+        set(value) {}
+
+    override fun isGameBusy(): Boolean {
+        TODO("Not yet implemented")
+    }
 
     override fun setGameType(gameType: GameType) {
     }

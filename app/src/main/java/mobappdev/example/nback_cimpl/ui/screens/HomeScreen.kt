@@ -1,6 +1,5 @@
 package mobappdev.example.nback_cimpl.ui.screens
 
-import android.provider.MediaStore.Audio
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,7 +13,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -27,10 +25,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
@@ -81,7 +77,8 @@ fun HomeScreen(
             )
             Box(
                 modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
+                contentAlignment = Alignment.Center,
+
             ) {
                 // ask for grid size and send to GameVM
                 // ask for number of events and send to GameVM
@@ -93,22 +90,11 @@ fun HomeScreen(
                     Text(text = "Game type: ${gameState.gameType}")
                     Text(text = "Time between events: ${vm.eventInterval/1000} s" )
                     Text(text = "Round length: ${vm.lengthOfGame}")
-
-
-//                    if (gameState.eventValue != -1) {
-//                        Text(
-//                            modifier = Modifier.fillMaxWidth(),
-//                            text = "Current eventValue is: ${gameState.eventValue}",
-//                            textAlign = TextAlign.Center
-//                        )
-//                    }
-//                    Button(onClick = vm::startGame) {
-//                        Text(text = "Generate eventValues")
-//                    }
                 }
             }
             Text(
                 modifier = Modifier.padding(16.dp),
+
                 text = "Start Game by choosing game type", //.uppercase(),
                 style = MaterialTheme.typography.displaySmall
             )
