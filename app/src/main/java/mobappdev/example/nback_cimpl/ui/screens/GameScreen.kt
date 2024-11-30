@@ -43,6 +43,7 @@ import mobappdev.example.nback_cimpl.ui.viewmodels.FakeVM
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameState
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameType
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameViewModel
+import mobappdev.example.nback_cimpl.ui.viewmodels.PopupState
 
 @Composable
 fun GameScreen(
@@ -50,18 +51,18 @@ fun GameScreen(
     navController: NavController
 
 ) {
-    //val snackBarHostState = remember { SnackbarHostState() }
-    //val scope = rememberCoroutineScope()
-    val nBack = vm.nBack
+    val nBack = vm.nBack.collectAsState()
     val score = vm.score.collectAsState()
     val gameState by vm.gameState.collectAsState()
-    val showPopup by vm.showEndGamePopup.collectAsState()
+    val gameHasEnded by vm.gameHasEnded.collectAsState()
+    val showPopup by vm.showPopup.collectAsState()
     val endGameMessage by vm.endGameMessage.collectAsState()
-    val gridSize  = vm.gridSize
+    val gridSize  = vm.gridSize.collectAsState()
+    val eventInterval by vm.eventInterval.collectAsState()
+    val lengthOfGame by vm.lengthOfGame.collectAsState()
 
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .background(Color.White)
             .fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -84,7 +85,7 @@ fun GameScreen(
                     .padding(16.dp)
             )
             Text(
-                text = "n = $nBack",
+                text = "n = ${nBack.value}",
                 fontSize = 24.sp
             )
             Text(
@@ -93,28 +94,30 @@ fun GameScreen(
             )
         }
 
-        Grid(gameState, gridSize, Modifier)
+        Grid(gameState, gridSize.value, Modifier)
         Buttons(vm)
 
         if (showPopup) {
             AlertDialog(
-                onDismissRequest = { vm.startGame() },
+                onDismissRequest = {
+                    vm.setPopupState(PopupState.None)
+                    vm.runPopup() },
                 title = { Text(text ="Time's up!") },
                 text = { Text(text = endGameMessage) },
                 confirmButton = {
                     Button( onClick = {
-                        vm.endGame()
-                        vm.hidePopup()
-                        vm.startGame() }
+                        vm.setPopupState(PopupState.None)
+                        vm.runPopup()
+                        vm.startGame()
+                    }
                     ){ Text(text = "Play again") }
                                 },
                 dismissButton = {
                     Button( onClick = {
-                        vm.endGame()
-                        vm.hidePopup()
-                        // clear gamestate
-                        navController.navigate(route = "HomeScreen")
-                    }) { Text(text = "Change gametype") }
+                        vm.setPopupState(PopupState.None)
+                        vm.runPopup()
+                        navController.navigate("Homescreen")
+                    }) { Text(text = "Home") }
                 }
             )
         }
@@ -126,11 +129,12 @@ fun Buttons(
     vm: GameViewModel
 ) {
     val gameState by vm.gameState.collectAsState()
-
-    // mutableStateOf() creates the state variable isMatch
-    var buttonColor by remember { mutableStateOf(Purple40) }
-    var triggerButtonColorFlash by remember { mutableStateOf(false) }
+    var visualButtonColor by remember { mutableStateOf(Purple40) }
+    var audioButtonColor by remember { mutableStateOf(Purple40) }
     var isMatch by remember { mutableStateOf(false) }
+    var isAudioMatch by remember { mutableStateOf(false) }
+    var visualTrigger by remember { mutableStateOf(false) }
+    var audioTrigger by remember { mutableStateOf(false) }
 
     Row(
         horizontalArrangement = Arrangement.SpaceEvenly,
@@ -143,12 +147,12 @@ fun Buttons(
     ) {
         // VISUAL BUTTON
         Button(
-            onClick = { triggerButtonColorFlash = true
+            onClick = { visualTrigger = true
                       isMatch = vm.checkMatch()},
             shape = RoundedCornerShape(20.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = visualButtonColor),
             enabled = gameState.gameType == GameType.Visual
                     || gameState.gameType == GameType.AudioVisual,
-            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
             modifier = Modifier
                 .padding(32.dp)
         ) {
@@ -163,12 +167,12 @@ fun Buttons(
 
         // AUDIO BUTTON
         Button(
-            onClick = { triggerButtonColorFlash = true
-                      isMatch = vm.checkMatch()},
+            onClick = { audioTrigger = true
+                      isAudioMatch = vm.checkAudioMatch()},
             shape = RoundedCornerShape(20.dp),
             enabled = gameState.gameType == GameType.Audio ||
                     gameState.gameType == GameType.AudioVisual,
-            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            colors = ButtonDefaults.buttonColors(containerColor = audioButtonColor),
             modifier = Modifier
                 .padding(32.dp)
         ) {
@@ -182,23 +186,35 @@ fun Buttons(
         }
 
         // UI-specific logic
-        LaunchedEffect(key1 = triggerButtonColorFlash) {
-            while (vm.isGameBusy()) {
+        LaunchedEffect(key1 = visualTrigger) {
+            while (vm.isVisualGameBusy()) {
                 delay(100L)
             }
-            buttonColor = if (isMatch) {
+            visualButtonColor = if (isMatch) {
                 Color.Green
             } else {
                 Color.Red
             }
             delay(200L)
-            buttonColor = Purple40
-            triggerButtonColorFlash = false
+            visualButtonColor = Purple40
+            visualTrigger = false
             }
+
+        LaunchedEffect(key1 = audioTrigger) {
+            while (vm.isAudioGameBusy()) {
+                delay(100L)
+            }
+            audioButtonColor = if (isAudioMatch) {
+                Color.Green
+            } else {
+                Color.Red
+            }
+            delay(200L)
+            audioButtonColor = Purple40
+            audioTrigger = false
         }
     }
-
-
+}
 
 @Composable
 fun Grid(
@@ -230,7 +246,7 @@ fun Grid(
                                 color =
                                 if (gameState.gameType == GameType.Visual ||
                                     gameState.gameType == GameType.AudioVisual) {
-                                    if (boxNumber == gameState.eventValue) {
+                                    if (boxNumber == gameState.visualValue) {
                                         Color.DarkGray
                                     } else {
                                         Color.LightGray
@@ -249,8 +265,6 @@ fun Grid(
         }
     }
 }
-
-
 
 @Preview
 @Composable

@@ -21,7 +21,7 @@ import mobappdev.example.nback_cimpl.ui.theme.NBack_CImplTheme
 import mobappdev.example.nback_cimpl.ui.viewmodels.GameVM
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.NavHost
-
+import mobappdev.example.nback_cimpl.ui.screens.SettingsScreen
 
 
 /**
@@ -55,7 +55,6 @@ class MainActivity : ComponentActivity() {
 
                     // Create a NavController for navigation
                     val navController = rememberNavController()
-                    var gridSize = gameViewModel.gridSize
 
                     // Set up NavHost for navigation
                     NavHost(
@@ -69,13 +68,20 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(route = "GameScreen") {
-                            GameScreen(vm = gameViewModel, navController = navController)
-                            // { navController.popBackStack() }
-                            }
+                            GameScreen(
+                                vm = gameViewModel,
+                                navController = navController
+                            )
+                        }
+                        composable(route = "SettingsScreen") {
+                            SettingsScreen(
+                                vm = gameViewModel,
+                                navController = navController
+                            )
                         }
                     }
-                    //HomeScreen(vm = gameViewModel)
                 }
             }
         }
     }
+}

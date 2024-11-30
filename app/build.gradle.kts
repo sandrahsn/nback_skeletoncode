@@ -73,6 +73,7 @@ dependencies {
     implementation("androidx.datastore:datastore-preferences:1.0.0")
     implementation("androidx.datastore:datastore-preferences-core-jvm:1.1.1")
     implementation("androidx.constraintlayout:constraintlayout:2.2.0")
+    implementation("androidx.compose.ui:ui-graphics-android:1.7.5")
 
     testImplementation("junit:junit:4.13.2")
 
